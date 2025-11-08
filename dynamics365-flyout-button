@@ -1,0 +1,65 @@
+//===============================
+// Enable Rule: Actions Button
+// ===============================
+function actionsButtonOnLoanFormEnableRule(primaryControl) {
+    try {
+        var formContext = primaryControl;
+        if (!formContext) return false;
+
+        var formType = formContext.ui.getFormType(); // 1 = Create, 2 = Update
+        var reviewStatusAttr = formContext.getAttribute("siva_reviewstatus");
+
+        if (reviewStatusAttr) {
+            var reviewStatus = reviewStatusAttr.getValue();
+            // Enable if Review Status = 1 (Imported)
+            return reviewStatus === 1;
+        }
+        return false;
+    } catch (error) {
+        console.error("Error in actionsButtonOnLoanFormEnableRule:", error.message);
+        return false;
+    }
+};
+
+
+
+// ===============================
+// OnClick Handler: Start Review Button
+// ===============================
+function onStartReviewClick(primaryControl) {
+    try {
+        var formContext = primaryControl;
+        if (!formContext) return;
+
+        var entityId = formContext.data.entity.getId();
+        var entityName = formContext.data.entity.getEntityName();
+
+        if (!entityId) {
+            console.warn("No record ID found — likely a new record (unsaved).");
+            return;
+        }
+
+        Xrm.Utility.showProgressIndicator("Processing...");
+
+        var updateData = {
+            siva_reviewstatus: 2 // Set to "In Progress"
+        };
+
+        Xrm.WebApi.updateRecord(entityName, entityId, updateData).then(
+            function success(result) {
+                console.log("Status successfully updated to 'In Progress':", result);
+                Xrm.Utility.closeProgressIndicator();
+
+                // Refresh form to reflect new status
+                formContext.data.refresh(false);
+            },
+            function error(err) {
+                console.error("Error updating status:", err.message, err);
+                Xrm.Utility.closeProgressIndicator();
+            }
+        );
+    } catch (error) {
+        console.error("Error in onStartReviewClick:", error.message, error);
+        Xrm.Utility.closeProgressIndicator();
+    }
+};
