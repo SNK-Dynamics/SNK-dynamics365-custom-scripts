@@ -1,0 +1,53 @@
+function filterExceptionLookup(executionContext) {
+    var formContext = executionContext.getFormContext();
+    var employeeLookup = formContext.getAttribute("siva_employee")?.getValue();
+    var accountLookup = formContext.getAttribute("parentcustomerid")?.getValue();
+
+    var addressControl = formContext.getControl("siva_address");
+    if (!addressControl) return;
+
+    
+        // Add new PreSearch based on which lookup is present
+        addressControl.addPreSearch(function () {
+            addressControl.endCustomFilter();
+            addressControl.startCustomFilter();
+            addExceptionFilter(formContext, employeeLookup, accountLookup);
+        });
+};
+
+function addExceptionFilter(formContext, employeeLookup, accountLookup) {
+    var addressControl = formContext.getControl("siva_address");
+    if (!addressControl) return;
+
+    // Define Enum or option set values
+    var accountAddressValue = 1;
+    var employeeAddressValue = 2;
+
+    var filterXml = "";
+
+    if (employeeLookup && employeeLookup.length > 0) {
+        // Employee found → show Employee Addresses only
+        filterXml = `
+            <filter type="and">
+                <condition attribute="siva_addresstype" operator="eq" value="${employeeAddressValue}" />
+            </filter>
+        `;
+        console.log("Employee found → showing Employee Addresses only");
+    } 
+    else if (accountLookup && accountLookup.length > 0) {
+        // Account found → show Account Addresses only
+        filterXml = `
+            <filter type="and">
+                <condition attribute="siva_addresstype" operator="eq" value="${accountAddressValue}" />
+            </filter>
+        `;
+        console.log("Account found → showing Account Addresses only");
+    } 
+    else {
+        console.log("No Employee or Account found → no filter applied.");
+        return;
+    }
+
+    // ✅ Apply the filter safely
+    addressControl.addCustomFilter(filterXml, "siva_address");
+};
